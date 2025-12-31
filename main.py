@@ -14,6 +14,7 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guild_messages = True
+intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -157,13 +158,13 @@ async def get_time(interaction:discord.Interaction):
         ))
 
 @bot.tree.command(name="serverlist", description="Botが参加しているサーバーの一覧を表示します（BOT管理者のみ）")
-async def serverlist(self, interaction:discord.Interaction):
+async def serverlist(interaction:discord.Interaction):
     if not is_bot_admin(interaction.user.id):
         await interaction.response.send_message("このコマンドはこのBOTの管理者のみが使用できます。", ephemeral=True)
         return
         
     # Botが参加しているサーバー（ギルド）の情報を取得
-    server_names = [(guild.name, guild.id) for guild in self.bot.guilds]
+    server_names = [(guild.name, guild.id) for guild in bot.guilds]
 
     if server_names:
         # サーバー名と招待リンクをリストで表示
@@ -171,7 +172,7 @@ async def serverlist(self, interaction:discord.Interaction):
         for server_name, server_id in server_names:
             message += f"{server_name}`{server_id}`\n"
         embed = discord.Embed(
-            title=f"Botが参加しているサーバー一覧 ({len(self.bot.guilds)})",
+            title=f"Botが参加しているサーバー一覧 ({len(bot.guilds)})",
             description=message,
             color=0x38b6ff
         )
