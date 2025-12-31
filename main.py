@@ -44,6 +44,7 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"{len(synced)}個のコマンドを同期しました！")
+        status.start()
     except Exception as e:
         log.error(f"コマンドの同期中にエラーが発生しました。\n{e}")
 
