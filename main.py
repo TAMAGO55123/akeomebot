@@ -21,6 +21,11 @@ log = get_log("Main")
 
 now_status = 0
 
+BOT_ADMIN = [1225220580668739694]
+
+def is_bot_admin(user_id:int) -> bool:
+    return user_id in BOT_ADMIN
+
 @tasks.loop(seconds=20)
 async def status():
     global now_status
@@ -151,7 +156,28 @@ async def get_time(interaction:discord.Interaction):
             description=string
         ))
 
+@bot.tree.command(name="serverlist", description="Botが参加しているサーバーの一覧を表示します（BOT管理者のみ）")
+async def serverlist(self, interaction:discord.Interaction):
+    if not is_bot_admin(interaction.user.id):
+        await interaction.response.send_message("このコマンドはこのBOTの管理者のみが使用できます。", ephemeral=True)
+        return
+        
+    # Botが参加しているサーバー（ギルド）の情報を取得
+    server_names = [(guild.name, guild.id) for guild in self.bot.guilds]
 
+    if server_names:
+        # サーバー名と招待リンクをリストで表示
+        message = ""
+        for server_name, server_id in server_names:
+            message += f"{server_name}`{server_id}`\n"
+        embed = discord.Embed(
+            title=f"Botが参加しているサーバー一覧 ({len(self.bot.guilds)})",
+            description=message,
+            color=0x38b6ff
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message("Botはサーバーに参加していません。", ephemeral=True)
 
 
 try:
