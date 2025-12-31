@@ -21,6 +21,11 @@ log = get_log("Main")
 
 now_status = 0
 
+BOT_ADMIN = [1225220580668739694]
+
+def is_bot_admin(user_id:int) -> bool:
+    return user_id in BOT_ADMIN
+
 @tasks.loop(seconds=20)
 async def status():
     global now_status
@@ -65,6 +70,10 @@ class serv:
         self.conn.commit()
     def get_server(self, server_id:int):
         self.cursor.execute('SELECT author_id, timestamp FROM server WHERE id = ?', (server_id,))
+        result = self.cursor.fetchall()
+        return result
+    def get_global(self):
+        self.cursor.execute('SELECT id, author_id, timestamp FROM server')
         result = self.cursor.fetchall()
         return result
     def update_user(self, server_id:int, author_id:int, timestamp:float):
@@ -125,7 +134,50 @@ async def get_time(interaction:discord.Interaction):
             description=string
         ))
 
+@bot.tree.command(name="get_global_time", description="ランキングを作成します。")
+async def get_time(interaction:discord.Interaction):
+    _serv = serv()
+    res = _serv.get_global()
+    if res:
+        print(res)
+        js:list[dict[str, int]] = []
+        for i in res:
+            js.append({"id":i[0], "author_id":i[1], "timestamp":i[2]})
+        times:list[dict[str, Union[int, float]]] = sorted(js, key=lambda x:abs(x["timestamp"]))
+        print(times)
+        string = ""
+        rank = 0
+        for i in times:
+            rank += 1
+            user = await bot.fetch_user(i["author_id"])
+            string += f"**{rank}位: {user.name}**\n{i["timestamp"]}秒\n"
+        await interaction.response.send_message(embed=discord.Embed(
+            title="グローバルランキング",
+            description=string
+        ))
 
+@bot.tree.command(name="serverlist", description="Botが参加しているサーバーの一覧を表示します（BOT管理者のみ）")
+async def serverlist(self, interaction:discord.Interaction):
+    if not is_bot_admin(interaction.user.id):
+        await interaction.response.send_message("このコマンドはこのBOTの管理者のみが使用できます。", ephemeral=True)
+        return
+        
+    # Botが参加しているサーバー（ギルド）の情報を取得
+    server_names = [(guild.name, guild.id) for guild in self.bot.guilds]
+
+    if server_names:
+        # サーバー名と招待リンクをリストで表示
+        message = ""
+        for server_name, server_id in server_names:
+            message += f"{server_name}`{server_id}`\n"
+        embed = discord.Embed(
+            title=f"Botが参加しているサーバー一覧 ({len(self.bot.guilds)})",
+            description=message,
+            color=0x38b6ff
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message("Botはサーバーに参加していません。", ephemeral=True)
 
 
 try:
