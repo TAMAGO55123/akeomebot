@@ -64,10 +64,22 @@ async def on_message(message:discord.Message):
     timestamp = created.timestamp()
     _serv = serv()
     if "あけおめ" in message.content:
+    #     _serv.update_user(
+    #         server_id=server_id,
+    #         author_id=user_id,
+    #         timestamp=timestamp
+    #     )
+        channel = message.channel
+        oneone = datetime.datetime(year=2026, month=1, day=1, hour=0, minute=0, second=0).astimezone(datetime.timezone.utc)
+        res = timestamp - oneone.timestamp()
+        await message.reply(embed=discord.Embed(
+            title="あけおめ誤差(2026/1/1)",
+            description=f"```{res}秒```"
+        ), mention_author=False)
         _serv.update_user(
             server_id=server_id,
             author_id=user_id,
-            timestamp=timestamp
+            timestamp=res
         )
     await bot.process_commands(message)
 
@@ -79,23 +91,19 @@ async def get_time(interaction:discord.Interaction):
         print(res)
         js:list[dict[str, int]] = []
         for i in res:
-            time = datetime.datetime.fromtimestamp(i[1])
-            jone = datetime.datetime(year=2026, month=1, day=1,hour=0, minute=0, second=0)
-            js.append({"id":interaction.guild.id, "author_id":i[0], "timestamp":datetime.datetime.timestamp(time)-datetime.datetime.timestamp(jone)})
+            js.append({"id":interaction.guild.id, "author_id":i[0], "timestamp":i[1]})
         times:list[dict[str, Union[int, float]]] = sorted(js, key=lambda x:abs(x["timestamp"]))
         print(times)
         string = ""
         rank = 0
         for i in times:
             rank += 1
-            user = interaction.guild.get_member(i["author_id"])
-            string += f"**{rank}位: <@{user.id}>**\n{i["timestamp"]}秒\n"
+            user = await interaction.guild.fetch_member(i["author_id"])
+            string += f"**{rank}位: {user.name}**\n{i["timestamp"]}秒\n"
         await interaction.response.send_message(embed=discord.Embed(
             title="ランキング",
             description=string
         ))
-    else:
-        await interaction.response.send_message("データがありません")
 
 
 
