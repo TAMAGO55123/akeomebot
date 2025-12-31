@@ -67,6 +67,10 @@ class serv:
         self.cursor.execute('SELECT author_id, timestamp FROM server WHERE id = ?', (server_id,))
         result = self.cursor.fetchall()
         return result
+    def get_global(self):
+        self.cursor.execute('SELECT id, author_id, timestamp FROM server')
+        result = self.cursor.fetchall()
+        return result
     def update_user(self, server_id:int, author_id:int, timestamp:float):
         self.cursor.execute("SELECT timestamp FROM server WHERE id = ? AND author_id = ?",(server_id, author_id))
         result = self.cursor.fetchone()
@@ -122,6 +126,28 @@ async def get_time(interaction:discord.Interaction):
             string += f"**{rank}位: {user.name}**\n{i["timestamp"]}秒\n"
         await interaction.response.send_message(embed=discord.Embed(
             title="ランキング",
+            description=string
+        ))
+
+@bot.tree.command(name="get_global_time", description="ランキングを作成します。")
+async def get_time(interaction:discord.Interaction):
+    _serv = serv()
+    res = _serv.get_global()
+    if res:
+        print(res)
+        js:list[dict[str, int]] = []
+        for i in res:
+            js.append({"id":i[0], "author_id":i[1], "timestamp":i[2]})
+        times:list[dict[str, Union[int, float]]] = sorted(js, key=lambda x:abs(x["timestamp"]))
+        print(times)
+        string = ""
+        rank = 0
+        for i in times:
+            rank += 1
+            user = await bot.fetch_user(i["author_id"])
+            string += f"**{rank}位: {user.name}**\n{i["timestamp"]}秒\n"
+        await interaction.response.send_message(embed=discord.Embed(
+            title="グローバルランキング",
             description=string
         ))
 
