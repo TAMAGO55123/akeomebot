@@ -19,6 +19,25 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 log = get_log("Main")
 
+now_status = 0
+
+@tasks.loop(seconds=20)
+async def status():
+    global now_status
+
+    if now_status == 0:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        oneone = datetime.datetime(year=2026, month=1, day=1, hour=0, minute=0, second=0).astimezone(datetime.timezone.utc)
+        res = now < oneone
+        a = "あけおめを待機中" if res else "あけおめしました"
+        data1 = discord.Activity(type=discord.ActivityType.playing, name=a)
+        now_status = 1
+    elif now_status == 1:
+        data1 = discord.Activity(type=discord.ActivityType.competing, name=f"{len(bot.guilds)}サーバー")
+        now_status =0
+
+    await bot.change_presence(activity=data1)
+
 @bot.event
 async def on_ready():
     print(f"{bot.user}としてログインしました！")
